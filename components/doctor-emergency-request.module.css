@@ -1,0 +1,292 @@
+.panel {
+  scroll-margin-top: 24px;
+}
+
+.warning,
+.notice,
+.integrationStatus {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  border-radius: 12px;
+  padding: 12px 14px;
+  font-size: 13px;
+  line-height: 1.55;
+}
+
+.warning {
+  margin: 0 0 18px;
+  border: 1px solid #f0d7a8;
+  background: #fff9ec;
+  color: #745214;
+}
+
+.warning svg,
+.notice svg {
+  width: 18px;
+  height: 18px;
+  flex: 0 0 auto;
+  margin-top: 1px;
+}
+
+.form {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.field {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 7px;
+  color: #526979;
+  font-size: 12px;
+  font-weight: 650;
+}
+
+.field span small,
+.field > small,
+.checkboxField small {
+  color: #7c8d98;
+  font-size: 11px;
+  font-weight: 450;
+}
+
+.field input,
+.field select,
+.field textarea {
+  width: 100%;
+  min-height: 42px;
+  border: 1px solid #dfe7ea;
+  border-radius: 9px;
+  background: #fff;
+  padding: 10px 12px;
+  color: #17334d;
+  font: inherit;
+}
+
+.field textarea {
+  min-height: 80px;
+  resize: vertical;
+}
+
+.field input[type='range'] {
+  min-height: 22px;
+  padding: 0;
+  accent-color: #168b8c;
+}
+
+.field input:focus,
+.field select:focus,
+.field textarea:focus {
+  outline: 2px solid #58b6b0;
+  outline-offset: 2px;
+}
+
+.fullWidth {
+  grid-column: 1 / -1;
+}
+
+.checkboxField {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  color: #526979;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.checkboxField input {
+  width: 16px;
+  height: 16px;
+  margin: 1px 0 0;
+  accent-color: #168b8c;
+}
+
+.checkboxField span {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.notice {
+  grid-column: 1 / -1;
+  margin: 0;
+}
+
+.noticeSuccess {
+  border: 1px solid #bce2d2;
+  background: #effaf5;
+  color: #216548;
+}
+
+.noticeError {
+  border: 1px solid #f0c5bf;
+  background: #fff4f2;
+  color: #963f35;
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding-top: 3px;
+}
+
+.actions > span {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: #718395;
+  font-size: 12px;
+}
+
+.actions > span svg {
+  width: 15px;
+  height: 15px;
+}
+
+.integrationStatus {
+  justify-content: space-between;
+  margin-top: 18px;
+  border: 1px solid #dfe7ea;
+  background: #f7fafb;
+  color: #526979;
+}
+
+.integrationStatus span {
+  color: #718395;
+}
+
+.previews {
+  display: grid;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+.previews h3 {
+  margin: 0;
+  color: #17334d;
+  font-size: 15px;
+}
+
+.preview {
+  display: grid;
+  gap: 6px;
+  border: 1px solid #dfe7ea;
+  border-radius: 12px;
+  padding: 14px;
+  color: #526979;
+  font-size: 12px;
+}
+
+.previewHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  color: #17334d;
+  font-size: 14px;
+}
+
+.previewHeader span {
+  border-radius: 20px;
+  background: #eef5f5;
+  padding: 4px 8px;
+  color: #168b8c;
+  font-size: 9px;
+  font-weight: 750;
+  letter-spacing: 0.06em;
+}
+
+.preview p,
+.preview small {
+  margin: 0;
+  line-height: 1.5;
+}
+
+.previewNote {
+  color: #8a6420;
+}
+
+:global(.dark) .warning {
+  border-color: #5c4a28;
+  background: #302719;
+  color: #f0d596;
+}
+
+:global(.dark) .field {
+  color: #b5c5ce;
+}
+
+:global(.dark) .field span small,
+:global(.dark) .field > small,
+:global(.dark) .checkboxField small,
+:global(.dark) .actions > span,
+:global(.dark) .integrationStatus span {
+  color: #9aadb8;
+}
+
+:global(.dark) .field input,
+:global(.dark) .field select,
+:global(.dark) .field textarea {
+  border-color: #354752;
+  background: #15232d;
+  color: #e3edf2;
+}
+
+:global(.dark) .checkboxField {
+  color: #b5c5ce;
+}
+
+:global(.dark) .noticeSuccess {
+  border-color: #285d4b;
+  background: #1b332a;
+  color: #a7e0c3;
+}
+
+:global(.dark) .noticeError {
+  border-color: #6a3835;
+  background: #382221;
+  color: #f2ada3;
+}
+
+:global(.dark) .integrationStatus,
+:global(.dark) .preview {
+  border-color: #354752;
+  background: #15232d;
+  color: #b5c5ce;
+}
+
+:global(.dark) .previews h3,
+:global(.dark) .previewHeader {
+  color: #e3edf2;
+}
+
+:global(.dark) .previewHeader span {
+  background: #203b3d;
+  color: #a9ddd7;
+}
+
+@media (max-width: 600px) {
+  .form {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .fullWidth {
+    grid-column: auto;
+  }
+
+  .actions,
+  .integrationStatus {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .actions button {
+    width: 100%;
+    justify-content: center;
+  }
+}

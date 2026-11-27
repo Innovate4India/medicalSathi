@@ -4,12 +4,10 @@ import { useState, type ChangeEvent, type FormEvent, type MouseEvent } from 'rea
 import Image from 'next/image'
 import Link from 'next/link'
 import { ThemeControl } from '@/components/theme-control'
-import { BloodDonorNetwork } from '@/components/blood-donor-network'
-import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
 import {
-  Activity, AlertCircle, ArrowRight, Bell, Check, CheckCircle2, ChevronDown, ClipboardPlus,
-  Clock3, Download, Droplets, FileHeart, FilePlus2, FileText, HeartPulse, HelpCircle, Home,
-  LockKeyhole, LogOut, Mail, MapPin, Menu, Phone, Plus, Printer, QrCode, Search, ShieldCheck, UserRound, Users, X,
+  Activity, AlertCircle, ArrowRight, Bell, Check, CheckCircle2, ChevronDown,
+  Clock3, Download, FileHeart, FilePlus2, FileText, HeartPulse, HelpCircle,
+  LockKeyhole, LogOut, Mail, MapPin, Menu, Phone, Plus, Printer, QrCode, Search, ShieldCheck, UserRound, X,
 } from 'lucide-react'
 
 type RecordCategory = 'Prescription' | 'Lab report' | 'Diagnosis' | 'Medical history' | 'Imaging report'
@@ -36,19 +34,10 @@ const accessHistory = [
   { name: 'Dr. Riley Chen', specialty: 'Cardiology', hospital: 'Sample Medical Center', purpose: 'Consultation', time: 'Oct 21, 11:08 AM', status: 'Access ended', initials: 'RC' },
 ]
 
-const wellnessData = [
-  { day: 'Mon', activity: 28, visits: 1 }, { day: 'Tue', activity: 38, visits: 2 },
-  { day: 'Wed', activity: 31, visits: 1 }, { day: 'Thu', activity: 48, visits: 2 },
-  { day: 'Fri', activity: 43, visits: 1 }, { day: 'Sat', activity: 57, visits: 1 },
-  { day: 'Sun', activity: 51, visits: 1 },
-]
-
 const navItems = [
-  { label: 'Overview', href: '#overview', icon: Home },
   { label: 'My profile', href: '#profile', icon: UserRound },
   { label: 'Medical records', href: '#records', icon: FileText },
   { label: 'Emergency QR', href: '#emergency-qr', icon: QrCode },
-  { label: 'Blood donor network', href: '#blood-network', icon: Droplets },
   { label: 'Access history', href: '#access-history', icon: Clock3 },
 ]
 
@@ -64,7 +53,7 @@ function Modal({ title, onClose, children }: { title: string; onClose: () => voi
 }
 
 export function PatientDashboard() {
-  const [activeNav, setActiveNav] = useState('#overview')
+  const [activeNav, setActiveNav] = useState('#profile')
   const [modal, setModal] = useState<'profile' | 'record' | null>(null)
   const [records, setRecords] = useState(initialRecords)
   const [selectedRecord, setSelectedRecord] = useState<RecordItem | null>(null)
@@ -81,11 +70,9 @@ export function PatientDashboard() {
   const [uploadStatus, setUploadStatus] = useState<UploadStatus>('idle')
   const activePage = activeNav.slice(1)
   const pageContent: Record<string, { title: string; description: string }> = {
-    overview: { title: `Welcome back, ${profile.name}`, description: 'Here’s a clear view of your health information and care activity.' },
     profile: { title: 'My profile', description: 'Review your details and keep your care information up to date.' },
-    records: { title: 'Medical records', description: 'A simple overview of your history, care notes and sample documents.' },
+    records: { title: 'Medical records', description: 'Browse your history, care notes and sample documents.' },
     'emergency-qr': { title: 'Emergency QR card', description: 'A clearly labelled demo card and guidance for emergency access.' },
-    'blood-network': { title: 'Blood donor network', description: 'Create a sample request and explore simulated local donor matches.' },
     'access-history': { title: 'Access history', description: 'See when sample care team members accessed your information.' },
   }
   const normalizedRecordSearch = recordSearch.trim().toLowerCase()
@@ -155,27 +142,10 @@ export function PatientDashboard() {
         </header>
         {mobileMenuOpen && <nav className="patient-mobile-nav" aria-label="Patient dashboard navigation">{navItems.map(({ label, href, icon: Icon }) => <a key={href} href={href} aria-current={activeNav === href ? 'page' : undefined} className={activeNav === href ? 'active' : ''} onClick={(event) => selectPage(event, href)}><Icon />{label}</a>)}<a href="#help" onClick={() => setMobileMenuOpen(false)}><HelpCircle />Help &amp; support</a><a href="#settings" onClick={() => setMobileMenuOpen(false)}><ShieldCheck />Privacy settings</a></nav>}
 
-        <main className="patient-content" id="overview" data-page={activePage}>
-          <div className="patient-heading-row"><div><span className="patient-eyebrow"><span className="patient-live-dot" /> YOUR CARE, IN ONE PLACE</span><h1>{pageContent[activePage]?.title ?? pageContent.overview.title}</h1><p>{pageContent[activePage]?.description ?? pageContent.overview.description}</p></div><span className="sample-label">SAMPLE DATA · UI DEMO</span></div>
+        <main className="patient-content" data-page={activePage}>
+          <div className="patient-heading-row"><div><span className="patient-eyebrow"><span className="patient-live-dot" /> YOUR CARE, IN ONE PLACE</span><h1>{pageContent[activePage]?.title ?? pageContent.profile.title}</h1><p>{pageContent[activePage]?.description ?? pageContent.profile.description}</p></div><span className="sample-label">SAMPLE DATA · UI DEMO</span></div>
 
-          <section className="patient-hero-card" aria-label="Patient profile summary">
-            <div className="patient-summary-main"><Image src="/sample-patient-avatar.png" alt="Portrait of sample patient" width={52} height={52} className="patient-large-avatar" /><div><span className="patient-summary-kicker">PATIENT PROFILE</span><h2>{profile.name}</h2><p>Patient ID <strong>MS-DEMO-2048</strong> <span className="patient-summary-divider">·</span> Profile last updated today</p></div></div>
-            <div className="patient-summary-detail"><span className="patient-summary-icon"><DropletsIcon /></span><span><small>Blood group</small><strong>O+ <em>Sample</em></strong></span></div>
-            <div className="patient-summary-detail"><span className="patient-summary-icon"><Phone /></span><span><small>Emergency contact</small><strong>Sample contact</strong></span></div>
-            <button className="patient-outline-button" onClick={() => setModal('profile')}>Edit profile</button>
-          </section>
-
-          <section className="patient-stat-grid" aria-label="Patient dashboard summary">
-            <a className="patient-stat-card" href="#records"><span className="patient-stat-icon teal"><FileHeart /></span><span className="patient-stat-copy"><small>Medical records</small><strong>{records.length.toString().padStart(2, '0')}</strong><em>Sample records</em></span><ArrowRight className="patient-stat-arrow" /></a>
-            <a className="patient-stat-card" href="#emergency-qr"><span className="patient-stat-icon blue"><QrCode /></span><span className="patient-stat-copy"><small>Emergency QR</small><strong>Ready</strong><em>Demo card only</em></span><CheckCircle2 className="patient-stat-arrow" /></a>
-            <a className="patient-stat-card" href="#access-history"><span className="patient-stat-icon violet"><Users /></span><span className="patient-stat-copy"><small>Care team</small><strong>04</strong><em>Sample providers</em></span><ArrowRight className="patient-stat-arrow" /></a>
-            <a className="patient-stat-card" href="#access-history"><span className="patient-stat-icon amber"><Clock3 /></span><span className="patient-stat-copy"><small>Recent access</small><strong>Today</strong><em>9:42 AM · sample</em></span><ArrowRight className="patient-stat-arrow" /></a>
-          </section>
-
-          <section className="patient-panel patient-quick-actions" aria-label="Quick actions"><div className="patient-panel-heading"><div><span className="patient-eyebrow">TAKE THE NEXT STEP</span><h2>Quick actions</h2></div></div><div className="patient-quick-action-list"><a href="#records"><FilePlus2 /> Add a health record <ArrowRight /></a><a href="#emergency-qr"><QrCode /> View emergency card <ArrowRight /></a><a href="#profile"><UserRound /> Update profile <ArrowRight /></a></div></section>
-
-          <div className="patient-section-grid patient-appointment-grid">
-            <section className="patient-panel patient-appointment-panel"><div className="patient-panel-heading"><div><span className="patient-eyebrow">YOUR NEXT VISIT</span><h2>Upcoming appointments</h2></div><span className="patient-ready-badge"><Check /> 2 scheduled</span></div><article className="patient-appointment-card"><span className="patient-appointment-date"><strong>24</strong><small>NOV</small></span><span className="patient-appointment-copy"><strong>Routine follow-up</strong><small><UserRound /> Dr. Morgan Lee <span>·</span> Sample Family Clinic</small><small><Clock3 /> Tuesday, 10:30 AM <span>·</span> In person</small></span><button className="patient-icon-button" aria-label="View routine follow-up appointment"><ArrowRight /></button></article><article className="patient-appointment-card"><span className="patient-appointment-date muted"><strong>03</strong><small>DEC</small></span><span className="patient-appointment-copy"><strong>Annual wellness visit</strong><small><UserRound /> Care team <span>·</span> Sample Community Health</small><small><Clock3 /> Thursday, 2:00 PM <span>·</span> In person</small></span><button className="patient-icon-button" aria-label="View annual wellness appointment"><ArrowRight /></button></article><p className="patient-sample-note">Sample appointments for display only.</p></section>
+          <div className="patient-section-grid patient-profile-grid">
             <section className="patient-panel patient-profile-panel" id="profile">
               <div className="patient-panel-heading"><div><span className="patient-eyebrow">YOUR DETAILS</span><h2>Patient profile</h2></div><button className="patient-text-button" onClick={() => setModal('profile')}>Edit profile <ArrowRight /></button></div>
               <div className="patient-profile-identity"><Image src="/sample-patient-avatar.png" alt="Portrait of sample patient" width={64} height={64} className="patient-profile-photo" /><span><strong>{profile.name}</strong><small>Patient ID · MS-DEMO-2048</small></span><span className="patient-profile-verified"><ShieldCheck /> Profile details are sample data</span></div>
@@ -187,12 +157,6 @@ export function PatientDashboard() {
                 <div className="patient-profile-address"><span>Home address</span><strong><MapPin /> 123 Example Street, Sample City, CA 90000 <em>Sample</em></strong></div>
               </div>
               {profileSaved && <p className="patient-save-note"><Check /> Sample profile changes updated for this session.</p>}
-            </section>
-
-            <section className="patient-panel patient-wellness-panel">
-              <div className="patient-panel-heading"><div><span className="patient-eyebrow">LAST 7 DAYS · SAMPLE</span><h2>Care activity</h2></div><span className="patient-trend-label"><span /> Records updated</span></div>
-              <div className="patient-chart"><ResponsiveContainer width="100%" height="100%"><AreaChart data={wellnessData} margin={{ top: 10, right: 4, left: -24, bottom: 0 }}><defs><linearGradient id="patientActivityFill" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#087f8c" stopOpacity={0.18} /><stop offset="100%" stopColor="#087f8c" stopOpacity={0} /></linearGradient></defs><CartesianGrid vertical={false} stroke="#edf1f2" strokeDasharray="3 3" /><XAxis dataKey="day" axisLine={false} tickLine={false} tick={{ fill: '#8797a5', fontSize: 10 }} tickMargin={10} /><YAxis axisLine={false} tickLine={false} tick={{ fill: '#8797a5', fontSize: 9 }} /><Tooltip contentStyle={{ border: '1px solid #e6edef', borderRadius: 10, fontSize: 11 }} /><Area type="monotone" dataKey="activity" name="Care activity" stroke="#087f8c" strokeWidth={2.5} fill="url(#patientActivityFill)" /></AreaChart></ResponsiveContainer></div>
-              <p className="patient-chart-foot"><Activity /> Illustrative activity only — not clinical measurements.</p>
             </section>
           </div>
 
@@ -214,8 +178,6 @@ export function PatientDashboard() {
               <div className="patient-qr-privacy"><LockKeyhole /><p><strong>Privacy notice</strong> This demo QR contains no patient information. Sensitive medical records should never be stored directly inside a QR code.</p></div><div className="patient-qr-instructions"><ShieldCheck /><p><strong>How to use</strong> In a live service, share a secure, time-limited link with emergency responders. This sample is non-scannable and cannot reveal medical information.</p></div>
             </section>
           </div>
-
-          <div id="blood-network" className="patient-blood-network-section"><BloodDonorNetwork mode="patient" /></div>
 
           <section className="patient-panel patient-access-panel" id="access-history">
             <div className="patient-panel-heading"><div><span className="patient-eyebrow">PRIVACY & TRANSPARENCY</span><h2>Recent access history</h2></div><button className="patient-text-button" onClick={() => setActiveNav('#access-history')}>View access log <ArrowRight /></button></div>
@@ -241,6 +203,3 @@ export function PatientDashboard() {
   )
 }
 
-function DropletsIcon() {
-  return <span className="patient-blood-icon" aria-hidden="true">O+</span>
-}

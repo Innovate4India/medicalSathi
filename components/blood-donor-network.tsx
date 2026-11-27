@@ -1,7 +1,7 @@
 'use client'
 
-import { useState, type FormEvent } from 'react'
-import { Activity, Check, CheckCircle2, Clock3, Droplets, HeartPulse, MapPin, ShieldCheck, Users } from 'lucide-react'
+import { useState } from 'react'
+import { Activity, Check, CheckCircle2, Clock3, Droplets, MapPin, ShieldCheck, Users } from 'lucide-react'
 import styles from './blood-donor-network.module.css'
 
 type NetworkMode = 'patient' | 'donor' | 'hospital'
@@ -13,18 +13,17 @@ type NetworkRequest = {
   hospital: string
   location: string
   urgency: string
-  contact: string
   response: 'Awaiting response' | 'Interested' | 'Not available'
   received: number
   closed: boolean
 }
 
 const initialRequests: NetworkRequest[] = [
-  { id: 'sample-1', group: 'O−', units: 2, hospital: 'City General Hospital', location: 'Downtown · North District', urgency: 'Urgent · Today', contact: 'Sample coordinator', response: 'Awaiting response', received: 0, closed: false },
-  { id: 'sample-2', group: 'A+', units: 1, hospital: 'Northstar Medical Center', location: 'Harbor District', urgency: 'Within 24 hours', contact: 'Sample coordinator', response: 'Interested', received: 0, closed: false },
-  { id: 'sample-3', group: 'B+', units: 3, hospital: 'Green Valley Hospital', location: 'West End', urgency: 'Routine · This week', contact: 'Sample coordinator', response: 'Interested', received: 1, closed: false },
-  { id: 'sample-4', group: 'AB−', units: 1, hospital: 'St. Mary’s Medical Centre', location: 'Riverside', urgency: 'Today', contact: 'Sample coordinator', response: 'Interested', received: 1, closed: false },
-  { id: 'sample-5', group: 'O+', units: 2, hospital: 'City General Hospital', location: 'Downtown · North District', urgency: 'Today', contact: 'Sample coordinator', response: 'Interested', received: 1, closed: false },
+  { id: 'sample-1', group: 'O−', units: 2, hospital: 'City General Hospital', location: 'Downtown · North District', urgency: 'Urgent · Today', response: 'Awaiting response', received: 0, closed: false },
+  { id: 'sample-2', group: 'A+', units: 1, hospital: 'Northstar Medical Center', location: 'Harbor District', urgency: 'Within 24 hours', response: 'Interested', received: 0, closed: false },
+  { id: 'sample-3', group: 'B+', units: 3, hospital: 'Green Valley Hospital', location: 'West End', urgency: 'Routine · This week', response: 'Interested', received: 1, closed: false },
+  { id: 'sample-4', group: 'AB−', units: 1, hospital: 'St. Mary’s Medical Centre', location: 'Riverside', urgency: 'Today', response: 'Interested', received: 1, closed: false },
+  { id: 'sample-5', group: 'O+', units: 2, hospital: 'City General Hospital', location: 'Downtown · North District', urgency: 'Today', response: 'Interested', received: 1, closed: false },
 ]
 
 const donors = [
@@ -41,30 +40,13 @@ function statusFor(request: NetworkRequest): RequestStatus {
   return 'Open'
 }
 
-export function BloodDonorNetwork({ mode }: { mode: NetworkMode }) {
+export function BloodDonorNetwork({ mode, showRequestTracker = true, donorBloodGroup, donorAvailable = true }: { mode: NetworkMode; showRequestTracker?: boolean; donorBloodGroup?: string; donorAvailable?: boolean }) {
   const [requests, setRequests] = useState(initialRequests)
   const [notice, setNotice] = useState('')
   const [confirmedUnits, setConfirmedUnits] = useState<Record<string, number>>({})
-
-  function submitRequest(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault()
-    const values = new FormData(event.currentTarget)
-    const newRequest: NetworkRequest = {
-      id: `local-${Date.now()}`,
-      group: String(values.get('group')),
-      units: Number(values.get('units')),
-      hospital: String(values.get('hospital')).trim(),
-      location: String(values.get('location')).trim(),
-      urgency: String(values.get('urgency')),
-      contact: String(values.get('contact')).trim(),
-      response: 'Awaiting response',
-      received: 0,
-      closed: false,
-    }
-    setRequests((current) => [newRequest, ...current])
-    setNotice('Sample request added to this page for demonstration. Nothing was sent or saved.')
-    event.currentTarget.reset()
-  }
+  const donorRequests = donorAvailable && donorBloodGroup
+    ? requests.filter((request) => request.group === donorBloodGroup)
+    : []
 
   function updateResponse(id: string, response: NetworkRequest['response']) {
     setRequests((current) => current.map((request) => request.id === id ? { ...request, response } : request))
@@ -83,7 +65,7 @@ export function BloodDonorNetwork({ mode }: { mode: NetworkMode }) {
       : 'Demo confirmation updated for this session. The request remains open for remaining units.')
   }
 
-  const heading = mode === 'patient' ? 'Request blood support' : mode === 'donor' ? 'Donor request management' : 'Review donor responses'
+  const heading = mode === 'patient' ? 'Blood donor network' : mode === 'donor' ? 'Donor request management' : 'Review donor responses'
 
   return (
     <section id={`${mode}-blood-network`} className={styles.network} aria-labelledby={`${mode}-blood-network-title`}>
@@ -98,39 +80,22 @@ export function BloodDonorNetwork({ mode }: { mode: NetworkMode }) {
 
       {notice && <p className={styles.notice} role="status"><CheckCircle2 aria-hidden="true" />{notice}</p>}
 
-      {mode === 'patient' && <>
-        <div className={styles.columns}>
-          <form className={`${styles.card} ${styles.requestForm}`} onSubmit={submitRequest}>
-            <div className={styles.cardHeading}><div><span className={styles.eyebrow}>PATIENT REQUEST</span><h3>Tell us what is needed</h3></div><span className={styles.icon}><HeartPulse aria-hidden="true" /></span></div>
-            <div className={styles.formGrid}>
-              <label>Blood group<select name="group" required defaultValue="O+"><option>O+</option><option>O−</option><option>A+</option><option>A−</option><option>B+</option><option>B−</option><option>AB+</option><option>AB−</option></select></label>
-              <label>Required units<input name="units" type="number" min="1" max="20" required defaultValue="2" /></label>
-              <label>Hospital<input name="hospital" required placeholder="Hospital name" /></label>
-              <label>Location<input name="location" required placeholder="Area or district" /></label>
-              <label>Urgency<select name="urgency" defaultValue="Within 24 hours"><option>Urgent · Today</option><option>Within 24 hours</option><option>Routine · This week</option></select></label>
-              <label>Contact details<input name="contact" required placeholder="Phone or email" /></label>
-            </div>
-            <div className={styles.formFooter}><span><ShieldCheck aria-hidden="true" /> Use sample details only.</span><button className={styles.primaryButton} type="submit"><Droplets aria-hidden="true" /> Add demo request</button></div>
-          </form>
-          <section className={`${styles.card} ${styles.matchCard}`} aria-labelledby="donor-match-heading">
-            <div className={styles.cardHeading}><div><span className={styles.eyebrow}>NEARBY COMMUNITY</span><h3 id="donor-match-heading">Potential donor matches</h3></div><span className={styles.icon}><Users aria-hidden="true" /></span></div>
-            <p className={styles.simulated}><Activity aria-hidden="true" /> Matching is simulated. Locations and availability are illustrative only.</p>
-            <div className={styles.donorList}>{donors.map((donor) => <article className={styles.donor} key={donor.initials}><span className={`${styles.avatar} ${styles[donor.tone]}`}>{donor.initials}</span><span className={styles.donorCopy}><strong>{donor.name}<small>{donor.group}</small></strong><span><MapPin aria-hidden="true" /> Approx. {donor.area}</span></span><span className={styles.availability}>{donor.availability}</span></article>)}</div>
-          </section>
-        </div>
-        <RequestTracker requests={requests} />
-      </>}
+      {mode === 'patient' && <section className={styles.card} aria-labelledby="donor-match-heading">
+        <div className={styles.cardHeading}><div><span className={styles.eyebrow}>NEARBY COMMUNITY</span><h3 id="donor-match-heading">Potential donor matches</h3></div><span className={styles.icon}><Users aria-hidden="true" /></span></div>
+        <p className={styles.simulated}><Activity aria-hidden="true" /> Matching is simulated. Locations and availability are illustrative only.</p>
+        <div className={styles.donorList}>{donors.map((donor) => <article className={styles.donor} key={donor.initials}><span className={`${styles.avatar} ${styles[donor.tone]}`}>{donor.initials}</span><span className={styles.donorCopy}><strong>{donor.name}<small>{donor.group}</small></strong><span><MapPin aria-hidden="true" /> Approx. {donor.area}</span></span><span className={styles.availability}>{donor.availability}</span></article>)}</div>
+      </section>}
 
       {mode === 'donor' && <>
         <section className={styles.card} aria-labelledby="incoming-requests-title">
           <div className={styles.cardHeading}><div><span className={styles.eyebrow}>SAMPLE REQUESTS NEARBY</span><h3 id="incoming-requests-title">Review incoming requests</h3></div><span className={styles.icon}><MapPin aria-hidden="true" /></span></div>
           <p className={styles.simulated}><Activity aria-hidden="true" /> Sample requests only. Responses update this demo screen and do not notify a patient or hospital.</p>
-          <div className={styles.requestList}>{requests.slice(0, 3).map((request) => <article className={styles.requestRow} key={request.id}>
+          <div className={styles.requestList}>{donorRequests.length > 0 ? donorRequests.map((request) => <article className={styles.requestRow} key={request.id}>
               <span className={styles.bloodGroup}>{request.group}</span><span className={styles.requestCopy}><strong>{request.hospital}</strong><small>{request.units} {request.units === 1 ? 'unit' : 'units'} · {request.location}</small><small>{request.urgency} · Tracking: {statusFor(request)}</small><small>Donor response: {request.response}</small></span>
             <div className={styles.actions}><button className={styles.secondaryButton} type="button" onClick={() => updateResponse(request.id, 'Not available')} disabled={request.response !== 'Awaiting response'}>{request.response === 'Not available' ? 'Marked unavailable' : 'Not available'}</button><button className={styles.primaryButton} type="button" onClick={() => updateResponse(request.id, 'Interested')} disabled={request.response !== 'Awaiting response'}><Check aria-hidden="true" /> Interested</button></div>
-          </article>)}</div>
+          </article>) : <p className={styles.simulated}>{donorAvailable ? `No sample requests exactly match ${donorBloodGroup ?? 'your blood group'}.` : 'Your profile is marked unavailable, so no incoming requests are shown.'}</p>}</div>
         </section>
-        <RequestTracker requests={requests} />
+        {showRequestTracker && <RequestTracker requests={requests} />}
       </>}
 
       {mode === 'hospital' && <>

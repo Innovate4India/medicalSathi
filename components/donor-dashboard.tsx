@@ -37,17 +37,21 @@ const navigation = [
   { href: '#overview', label: 'Overview', icon: Home },
   { href: '#requests', label: 'Blood requests', icon: Droplets },
   { href: '#donor-blood-network', label: 'Request workflow', icon: Activity },
+  { href: '#notifications', label: 'Notification history', icon: Bell },
   { href: '#profile', label: 'Donor profile', icon: UserRound },
-  { href: '#availability', label: 'Availability', icon: ShieldCheck },
   { href: '#history', label: 'Donation history', icon: CalendarDays },
 ]
 
 export function DonorDashboard() {
-  const [available, setAvailable] = useState(true)
-  const [notifications, setNotifications] = useState({ nearby: true, urgent: true, reminders: false })
+  const [donorBloodGroup, setDonorBloodGroup] = useState('O−')
+  const [whatsappAlertsEnabled, setWhatsappAlertsEnabled] = useState(false)
   const [requests, setRequests] = useState(initialRequests)
   const [mobileNavOpen, setMobileNavOpen] = useState(false)
-  const respondedCount = requests.filter((request) => request.status === 'Responded').length
+  const donorAvailable = true
+  const matchingRequests = requests.filter((request) => request.group === donorBloodGroup)
+  const incomingRequests = donorAvailable ? matchingRequests : []
+  const respondedCount = matchingRequests.filter((request) => request.status === 'Responded').length
+  const donorBloodGroupName = `${donorBloodGroup.slice(0, -1)} ${donorBloodGroup.endsWith('+') ? 'positive' : 'negative'}`
 
   function updateRequest(id: string, status: SampleRequest['status']) {
     setRequests((current) => current.map((request) => request.id === id ? { ...request, status } : request))
@@ -83,13 +87,12 @@ export function DonorDashboard() {
 
           <section className="donor-profile-banner" aria-label="Donor summary">
             <div className="donor-profile-main"><div className="donor-avatar-large">JD</div><div><span className="donor-caption">REGISTERED DONOR</span><h2>Jordan Davis</h2><p><MapPin /> North District, Springfield</p></div></div>
-            <div className="donor-banner-detail"><span className="donor-blood-mark"><Droplets /></span><span><small>Blood group</small><strong>O negative</strong></span></div>
-            <div className="donor-banner-detail"><span className={`donor-status-dot ${available ? '' : 'is-off'}`} /><span><small>Availability</small><strong>{available ? 'Available to help' : 'Not available'}</strong></span></div>
+            <div className="donor-banner-detail"><span className="donor-blood-mark"><Droplets /></span><span><small>Blood group</small><strong>{donorBloodGroupName}</strong></span></div>
             <a className="donor-inline-link" href="#profile">View profile <ChevronDown /></a>
           </section>
 
           <section className="donor-metric-grid" aria-label="Donor overview metrics">
-            <article className="donor-metric-card"><span className="donor-metric-icon teal"><Droplets /></span><span><small>Nearby requests</small><strong>{requests.filter((request) => request.status === 'Open').length}</strong><em>Sample requests near you</em></span></article>
+            <article className="donor-metric-card"><span className="donor-metric-icon teal"><Droplets /></span><span><small>Nearby requests</small><strong>{incomingRequests.filter((request) => request.status === 'Open').length}</strong><em>Exact-group sample requests</em></span></article>
             <article className="donor-metric-card"><span className="donor-metric-icon green"><HeartPulse /></span><span><small>Donations given</small><strong>3</strong><em>Sample donation history</em></span></article>
             <article className="donor-metric-card"><span className="donor-metric-icon blue"><Users /></span><span><small>Interest sent</small><strong>{respondedCount}</strong><em>Sample UI responses</em></span></article>
             <article className="donor-metric-card"><span className="donor-metric-icon amber"><Clock3 /></span><span><small>Last donation</small><strong>Sep 2025</strong><em>Sample profile detail</em></span></article>
@@ -98,8 +101,9 @@ export function DonorDashboard() {
           <div className="donor-overview-grid">
             <section className="donor-panel donor-request-preview" aria-labelledby="nearby-heading">
               <div className="donor-panel-heading"><div><span className="donor-section-kicker">NEARBY OPPORTUNITIES</span><h2 id="nearby-heading">Requests near you</h2></div><a href="#requests">View all <ChevronDown /></a></div>
-              {requests.slice(0, 2).map((request) => <RequestRow key={request.id} request={request} onInterested={() => updateRequest(request.id, 'Responded')} />)}
-              <p className="donor-demo-note"><ShieldCheck /> Sample requests only. No real donor or hospital notifications are sent.</p>
+              {incomingRequests.slice(0, 2).map((request) => <RequestRow key={request.id} request={request} onInterested={() => updateRequest(request.id, 'Responded')} />)}
+              {incomingRequests.length === 0 && <p className="donor-demo-note"><ShieldCheck /> No sample requests exactly match {donorBloodGroup}.</p>}
+              <p className="donor-demo-note"><ShieldCheck /> Only exact blood-group matches are shown. Sample requests only; no real notifications are sent.</p>
             </section>
             <section className="donor-panel donor-activity-panel" aria-labelledby="activity-heading">
               <div className="donor-panel-heading"><div><span className="donor-section-kicker">YOUR RECENT ACTIVITY</span><h2 id="activity-heading">Community activity</h2></div></div>
@@ -111,40 +115,32 @@ export function DonorDashboard() {
           </div>
 
           <section className="donor-panel donor-requests-section" id="requests" aria-labelledby="requests-heading">
-            <div className="donor-panel-heading"><div><span className="donor-section-kicker">COMMUNITY NEEDS</span><h2 id="requests-heading">Blood requests</h2><p>Sample requests from hospitals in your area.</p></div><span className="donor-count-pill">{requests.length} sample requests</span></div>
-            <div className="donor-request-list">{requests.map((request) => <RequestCard key={request.id} request={request} onInterested={() => updateRequest(request.id, 'Responded')} onUnavailable={() => updateRequest(request.id, 'Unavailable')} />)}</div>
-            <p className="donor-demo-note"><ShieldCheck /> These are fictional examples. Actions only update this screen and do not contact a hospital.</p>
+            <div className="donor-panel-heading"><div><span className="donor-section-kicker">COMMUNITY NEEDS</span><h2 id="requests-heading">Blood requests</h2><p>Available sample requests matching your registered blood group ({donorBloodGroup}).</p></div><span className="donor-count-pill">{incomingRequests.length} matching requests</span></div>
+            <div className="donor-request-list">{incomingRequests.map((request) => <RequestCard key={request.id} request={request} onInterested={() => updateRequest(request.id, 'Responded')} onUnavailable={() => updateRequest(request.id, 'Unavailable')} />)}</div>
+            {incomingRequests.length === 0 && <p className="donor-demo-note"><ShieldCheck /> No sample requests exactly match {donorBloodGroup}.</p>}
+            <p className="donor-demo-note"><ShieldCheck /> Exact-group matching is a UI preview only; blood group alone does not establish clinical compatibility. A treating hospital must confirm suitability.</p>
           </section>
 
-          <BloodDonorNetwork mode="donor" />
+          <BloodDonorNetwork mode="donor" donorBloodGroup={donorBloodGroup} donorAvailable={donorAvailable} showRequestTracker={false} />
 
-          <div className="donor-lower-grid">
-            <section className="donor-panel donor-profile-section" id="profile" aria-labelledby="profile-heading">
-              <div className="donor-panel-heading"><div><span className="donor-section-kicker">YOUR DETAILS</span><h2 id="profile-heading">Donor profile</h2><p>Keep your sample contact details up to date.</p></div><span className="donor-edit-badge">Sample profile</span></div>
-              <form className="donor-form" onSubmit={(event) => event.preventDefault()}>
-                <label>Full name<input name="name" defaultValue="Jordan Davis" autoComplete="name" /></label>
-                <label>Phone number<input name="phone" defaultValue="+1 (555) 014-2580" autoComplete="tel" type="tel" /></label>
-                <label className="donor-form-wide">Email address <span className="donor-optional">Optional</span><input name="email" defaultValue="jordan.davis@example.test" autoComplete="email" type="email" /></label>
-                <label>Blood group<select name="blood-group" defaultValue="O-"><option value="O-">O negative (O−)</option><option value="O+">O positive (O+)</option><option value="A-">A negative (A−)</option><option value="A+">A positive (A+)</option><option value="B-">B negative (B−)</option><option value="B+">B positive (B+)</option><option value="AB-">AB negative (AB−)</option><option value="AB+">AB positive (AB+)</option></select></label>
-                <label>Location<input name="location" defaultValue="North District, Springfield" autoComplete="address-level2" /></label>
-                <label className="donor-form-wide">Last donation date<input name="last-donation" defaultValue="2025-09-18" type="date" /></label>
-                <div className="donor-form-actions"><span><ShieldCheck /> Sample details stay in this demo.</span><button type="submit" className="donor-primary-button">Save profile</button></div>
-              </form>
-            </section>
+          <section className="donor-panel donor-profile-section" id="profile" aria-labelledby="profile-heading">
+            <div className="donor-panel-heading"><div><span className="donor-section-kicker">YOUR DETAILS</span><h2 id="profile-heading">Donor profile</h2><p>Keep your sample contact details up to date.</p></div><span className="donor-edit-badge">Sample profile</span></div>
+            <form className="donor-form" onSubmit={(event) => event.preventDefault()}>
+              <label>Full name<input name="name" defaultValue="Jordan Davis" autoComplete="name" /></label>
+              <label>Phone number<input name="phone" defaultValue="+1 (555) 014-2580" autoComplete="tel" type="tel" /></label>
+              <label className="donor-form-wide">Email address <span className="donor-optional">Optional</span><input name="email" defaultValue="jordan.davis@example.test" autoComplete="email" type="email" /></label>
+              <label>Blood group<select name="blood-group" value={donorBloodGroup} onChange={(event) => setDonorBloodGroup(event.target.value)}><option value="O−">O negative (O−)</option><option value="O+">O positive (O+)</option><option value="A−">A negative (A−)</option><option value="A+">A positive (A+)</option><option value="B−">B negative (B−)</option><option value="B+">B positive (B+)</option><option value="AB−">AB negative (AB−)</option><option value="AB+">AB positive (AB+)</option></select></label>
+              <label>Location<input name="location" defaultValue="North District, Springfield" autoComplete="address-level2" /></label>
+              <label className="donor-form-wide">Last donation date<input name="last-donation" defaultValue="2025-09-18" type="date" /></label>
+              <div className="donor-form-actions"><span><ShieldCheck /> Sample details stay in this demo.</span><button type="submit" className="donor-primary-button">Save profile</button></div>
+            </form>
+          </section>
 
-            <section className="donor-panel donor-availability-section" id="availability" aria-labelledby="availability-heading">
-              <div className="donor-panel-heading"><div><span className="donor-section-kicker">SET YOUR PREFERENCE</span><h2 id="availability-heading">Availability</h2><p>Choose whether you’re open to sample requests.</p></div></div>
-              <div className={`donor-availability-card ${available ? 'is-available' : ''}`}>
-                <span className="donor-availability-symbol"><HeartPulse /></span><span className="donor-availability-copy"><strong>{available ? 'Available to donate' : 'Not available right now'}</strong><small>{available ? 'You’re shown as available in this sample dashboard.' : 'Your sample profile is marked unavailable.'}</small></span>
-                <button type="button" className={`donor-switch ${available ? 'is-on' : ''}`} role="switch" aria-checked={available} aria-label="Set donor availability" onClick={() => setAvailable((value) => !value)}><span /></button>
-              </div>
-              <div className="donor-preferences-heading"><strong>Notification preferences</strong><small>Local UI preferences only</small></div>
-              <PreferenceRow title="Nearby blood requests" detail="Sample updates for your area" checked={notifications.nearby} onChange={() => setNotifications((current) => ({ ...current, nearby: !current.nearby }))} />
-              <PreferenceRow title="Urgent requests" detail="When a nearby request is marked urgent" checked={notifications.urgent} onChange={() => setNotifications((current) => ({ ...current, urgent: !current.urgent }))} />
-              <PreferenceRow title="Donation reminders" detail="A gentle reminder to review your profile" checked={notifications.reminders} onChange={() => setNotifications((current) => ({ ...current, reminders: !current.reminders }))} />
-              <p className="donor-demo-note"><Bell /> Preference controls are visual only. No notifications are sent.</p>
-            </section>
-          </div>
+          <section className="donor-panel donor-history-section" id="notifications" aria-labelledby="notification-history-heading">
+            <div className="donor-panel-heading"><div><span className="donor-section-kicker">DELIVERY RECORD</span><h2 id="notification-history-heading">Notification history</h2><p>WhatsApp status: not connected.</p></div><span className="donor-history-total">No messages sent</span></div>
+            <PreferenceRow title="WhatsApp emergency alerts" detail="Opt in for emergency messages (not connected)" checked={whatsappAlertsEnabled} onChange={() => setWhatsappAlertsEnabled((enabled) => !enabled)} />
+            <p className="donor-demo-note"><Bell /> No notification history is available. The WhatsApp integration is not configured in this frontend demo, and no messages have been sent.</p>
+          </section>
 
           <section className="donor-panel donor-history-section" id="history" aria-labelledby="history-heading">
             <div className="donor-panel-heading"><div><span className="donor-section-kicker">YOUR GENEROSITY</span><h2 id="history-heading">Donation history</h2><p>A record of previous sample donations.</p></div><span className="donor-history-total">3 sample donations</span></div>

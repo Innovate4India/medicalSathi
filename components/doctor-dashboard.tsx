@@ -3,11 +3,29 @@
 import Image from 'next/image'
 import Link from 'next/link'
 import { useState, type FormEvent } from 'react'
-import { Activity, AlertTriangle, ArrowDownRight, ArrowRight, BadgeCheck, Bell, CalendarDays, Check, CheckCircle2, ChevronRight, ClipboardList, Clock3, FilePlus2, FileText, HeartPulse, KeyRound, LockKeyhole, Menu, Plus, QrCode, ScanLine, ShieldAlert, ShieldCheck, Stethoscope, UserRound, Users, X } from 'lucide-react'
+import { Activity, AlertTriangle, ArrowDownRight, ArrowRight, BadgeCheck, Bell, CalendarDays, Check, CheckCircle2, ChevronRight, ClipboardList, Clock3, Droplets, FilePlus2, FileText, HeartPulse, KeyRound, LockKeyhole, MapPin, Menu, Plus, QrCode, ScanLine, ShieldAlert, ShieldCheck, Stethoscope, UserRound, Users, X } from 'lucide-react'
 import { ThemeControl } from '@/components/theme-control'
+import requestStyles from './doctor-emergency-request.module.css'
 
 type MedicalRecord = { id: number; patient: string; category: string; date: string; doctor: string; hospital: string; summary: string }
 type DemoAccessState = 'idle' | 'scanned' | 'pending' | 'granted' | 'denied'
+type BloodGroup = 'A+' | 'A−' | 'B+' | 'B−' | 'AB+' | 'AB−' | 'O+' | 'O−'
+type EmergencyPriority = 'Critical' | 'Urgent' | 'High'
+type BloodRequestPreview = {
+  id: string
+  group: BloodGroup
+  units: number
+  hospital: string
+  location: string
+  priority: EmergencyPriority
+  contact: string
+  notes: string
+  radiusKm: number
+  expandRadius: boolean
+}
+
+const bloodGroups: BloodGroup[] = ['A+', 'A−', 'B+', 'B−', 'AB+', 'AB−', 'O+', 'O−']
+const emergencyPriorities: EmergencyPriority[] = ['Critical', 'Urgent', 'High']
 
 const accessStateCopy: Record<DemoAccessState, { title: string; detail: string }> = {
   idle: { title: 'Awaiting sample scan', detail: 'No patient access has been requested.' },
@@ -26,6 +44,7 @@ const patients = [
 const navItems = [
   { id: 'overview', label: 'Overview', icon: Activity },
   { id: 'profile', label: 'Doctor profile', icon: Stethoscope },
+  { id: 'blood-requests', label: 'Emergency blood requests', icon: Droplets },
   { id: 'scanner', label: 'Patient QR scanner', icon: QrCode },
   { id: 'records', label: 'Patient records', icon: FileText },
   { id: 'history', label: 'Access history', icon: Clock3 },
@@ -54,6 +73,10 @@ export function DoctorDashboard() {
   const [records, setRecords] = useState(initialRecords)
   const [editing, setEditing] = useState<MedicalRecord | 'new' | null>(null)
   const [notice, setNotice] = useState('')
+  const [bloodRequestPreviews, setBloodRequestPreviews] = useState<BloodRequestPreview[]>([])
+  const [bloodRequestNotice, setBloodRequestNotice] = useState<{ kind: 'success' | 'error'; message: string } | null>(null)
+  const [searchRadiusKm, setSearchRadiusKm] = useState(10)
+  const [expandRadius, setExpandRadius] = useState(true)
 
   function identifyPatient(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -86,6 +109,51 @@ export function DoctorDashboard() {
     setRecords((current) => typeof currentEditing === 'object' ? current.map((item) => item.id === currentEditing.id ? record : item) : [record, ...current])
     setEditing(null)
     setNotice('Sample record updated for this session only.')
+  }
+
+  function previewBloodRequest(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    const formData = new FormData(event.currentTarget)
+    const group = String(formData.get('group')) as BloodGroup
+    const units = Number(formData.get('units'))
+    const hospital = String(formData.get('hospital')).trim()
+    const location = String(formData.get('location')).trim()
+    const priority = String(formData.get('priority')) as EmergencyPriority
+    const contact = String(formData.get('contact')).trim()
+    const notes = String(formData.get('notes')).trim()
+
+    if (!bloodGroups.includes(group) || !emergencyPriorities.includes(priority) || !Number.isSafeInteger(units) || units < 1 || !hospital || !location || !contact) {
+      setBloodRequestNotice({ kind: 'error', message: 'Enter a valid blood group, a positive whole number of units, hospital, location and contact information.' })
+      return
+    }
+
+    const isDuplicate = bloodRequestPreviews.some((request) =>
+      request.group === group
+      && request.units === units
+      && request.hospital.toLowerCase() === hospital.toLowerCase()
+      && request.location.toLowerCase() === location.toLowerCase()
+      && request.priority === priority
+      && request.contact.toLowerCase() === contact.toLowerCase()
+      && request.notes.toLowerCase() === notes.toLowerCase(),
+    )
+    if (isDuplicate) {
+      setBloodRequestNotice({ kind: 'error', message: 'This identical request preview already exists in this page session.' })
+      return
+    }
+
+    setBloodRequestPreviews((current) => [{
+      id: `preview-${Date.now()}-${bloodRequestPreviews.length + 1}`,
+      group,
+      units,
+      hospital,
+      location,
+      priority,
+      contact,
+      notes,
+      radiusKm: searchRadiusKm,
+      expandRadius,
+    }, ...current])
+    setBloodRequestNotice({ kind: 'success', message: 'Local preview created. Nothing was saved, matched, or sent to donors or hospitals.' })
   }
 
   const canViewPatientRecords = Boolean(identified && accessState === 'granted')
@@ -121,6 +189,26 @@ export function DoctorDashboard() {
 
           <div className="doctor-overview-grid"><section className="doctor-panel doctor-emergency-panel"><div className="doctor-panel-heading"><div><span className="doctor-section-kicker">PRIORITY REVIEW</span><h2>Recent emergency cases</h2></div><span className="doctor-sample-badge">SAMPLE</span></div><div className="doctor-emergency-list"><article className="doctor-emergency-row"><span className="doctor-emergency-avatar">AP</span><span className="doctor-row-person"><strong>Sample patient A</strong><small>MS-DEMO-2048 · Sample Family Clinic</small></span><span className="doctor-emergency-level high"><i />Review</span><span className="doctor-row-time">Today, 9:42 AM</span></article><article className="doctor-emergency-row"><span className="doctor-emergency-avatar">JR</span><span className="doctor-row-person"><strong>Sample patient B</strong><small>MS-DEMO-3196 · Sample Medical Center</small></span><span className="doctor-emergency-level resolved"><Check />Resolved</span><span className="doctor-row-time">Yesterday</span></article><article className="doctor-emergency-row"><span className="doctor-emergency-avatar">SK</span><span className="doctor-row-person"><strong>Sample patient C</strong><small>MS-DEMO-4721 · Sample Community Health</small></span><span className="doctor-emergency-level review"><i />Follow-up</span><span className="doctor-row-time">Oct 24, 2026</span></article></div></section>
             <section className="doctor-panel doctor-activity-panel"><div className="doctor-panel-heading"><div><span className="doctor-section-kicker">LATEST UPDATES</span><h2>Recent activity</h2></div><Activity /></div><div className="doctor-activity-list">{activities.map(({ icon: Icon, title, detail, time, tone }) => <article className="doctor-activity-item" key={title}><span className={`doctor-activity-icon ${tone}`}><Icon /></span><span><strong>{title}</strong><small>{detail}</small><em>{time}</em></span></article>)}</div></section></div>
+
+          <section className={`doctor-panel ${requestStyles.panel}`} id="blood-requests" aria-labelledby="blood-request-title">
+            <div className="doctor-panel-heading"><div><span className="doctor-section-kicker">EMERGENCY COORDINATION</span><h2 id="blood-request-title">Raise emergency blood request</h2><p>Enter request details for a local interface preview.</p></div><span className="doctor-sample-badge">DEMO ONLY</span></div>
+            <p className={requestStyles.warning}><ShieldAlert aria-hidden="true" /> The “verified” doctor profile is sample data. This frontend does not authenticate or verify doctors, save requests, find donors, or send notifications.</p>
+            <form className={requestStyles.form} onSubmit={previewBloodRequest}>
+              <label className={requestStyles.field}><span>Required blood group</span><select name="group" defaultValue="O−" required>{bloodGroups.map((group) => <option key={group} value={group}>{group}</option>)}</select></label>
+              <label className={requestStyles.field}><span>Required units</span><input name="units" type="number" min="1" step="1" defaultValue="1" required /></label>
+              <label className={requestStyles.field}><span>Hospital name</span><input name="hospital" type="text" maxLength={100} placeholder="Enter hospital name" required /></label>
+              <label className={requestStyles.field}><span>Hospital location</span><input name="location" type="text" maxLength={160} placeholder="Address, area or city" required /></label>
+              <label className={requestStyles.field}><span>Emergency priority</span><select name="priority" defaultValue="Critical" required>{emergencyPriorities.map((priority) => <option key={priority} value={priority}>{priority}</option>)}</select></label>
+              <label className={requestStyles.field}><span>Contact information</span><input name="contact" type="tel" maxLength={40} placeholder="Phone number" required /></label>
+              <label className={`${requestStyles.field} ${requestStyles.fullWidth}`}><span>Emergency notes <small>(optional)</small></span><textarea name="notes" rows={3} maxLength={500} placeholder="Additional context (do not enter patient-identifying details)" /></label>
+              <label className={`${requestStyles.field} ${requestStyles.fullWidth}`}><span>Initial search radius: {searchRadiusKm} km</span><input type="range" min="10" max="50" step="10" value={searchRadiusKm} onChange={(event) => setSearchRadiusKm(Number(event.target.value))} /><small>Configurable preview setting. No location matching is performed.</small></label>
+              <label className={`${requestStyles.checkboxField} ${requestStyles.fullWidth}`}><input type="checkbox" checked={expandRadius} onChange={(event) => setExpandRadius(event.target.checked)} /><span>Allow gradual radius expansion if not enough donors are found <small>(preview setting only)</small></span></label>
+              {bloodRequestNotice && <p className={`${requestStyles.notice} ${bloodRequestNotice.kind === 'error' ? requestStyles.noticeError : requestStyles.noticeSuccess}`} role="status">{bloodRequestNotice.kind === 'error' ? <AlertTriangle aria-hidden="true" /> : <CheckCircle2 aria-hidden="true" />}{bloodRequestNotice.message}</p>}
+              <div className={`${requestStyles.actions} ${requestStyles.fullWidth}`}><span><MapPin aria-hidden="true" /> Demo search radius: {searchRadiusKm} km</span><button className="doctor-primary-button" type="submit"><Droplets aria-hidden="true" /> Preview request locally</button></div>
+            </form>
+            <div className={requestStyles.integrationStatus}><strong>WhatsApp status</strong><span>Not connected · no donor notifications will be sent</span></div>
+            {bloodRequestPreviews.length > 0 && <div className={requestStyles.previews} aria-live="polite"><h3>Local request previews</h3>{bloodRequestPreviews.map((request) => <article className={requestStyles.preview} key={request.id}><div className={requestStyles.previewHeader}><strong>{request.group} · {request.units} {request.units === 1 ? 'unit' : 'units'}</strong><span>LOCAL PREVIEW</span></div><p>{request.priority} · {request.hospital} · {request.location}</p><small>Contact: {request.contact} · Initial radius: {request.radiusKm} km{request.expandRadius ? ' · Radius expansion enabled' : ''}</small>{request.notes && <small>Notes: {request.notes}</small>}<p className={requestStyles.previewNote}>Donor matching and WhatsApp delivery are not connected.</p></article>)}</div>}
+          </section>
 
           <section className="doctor-panel doctor-profile-details" id="profile"><div className="doctor-panel-heading"><div><span className="doctor-section-kicker">PROFESSIONAL DETAILS</span><h2>Doctor profile</h2></div><span className="doctor-verification"><CheckCircle2 /> Verified <em>Sample status</em></span></div><div className="doctor-details-grid"><div><small>Full name</small><strong>Dr. Morgan Lee</strong></div><div><small>Contact email</small><strong>morgan.lee@example.test</strong></div><div><small>Contact phone</small><strong>+1 (555) 010-2048</strong></div><div><small>Medical registration</small><strong>DEMO-MED-2048</strong></div><div><small>Specialization</small><strong>Internal Medicine</strong></div><div><small>Hospital affiliation</small><strong>Sample Family Clinic</strong></div></div><p className="doctor-data-note"><ShieldCheck /> Fictional profile details shown for demonstration. No real provider or patient data is used.</p></section>
 
