@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button'
 import { ThemeControl } from '@/components/theme-control'
 
 const roles = [
-  { id: 'patient', title: 'Patient', detail: 'Find and coordinate care' },
+  { id: 'patient', title: 'Member', detail: 'Find and coordinate your care' },
   { id: 'doctor', title: 'Doctor', detail: 'Support your patients' },
   { id: 'hospital', title: 'Hospital', detail: 'Coordinate your care team' },
   { id: 'donor', title: 'Blood donor', detail: 'Help your community' },
